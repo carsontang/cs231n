@@ -66,24 +66,48 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
-    # Compute the forward pass
-    scores = None
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
-    #############################################################################
+    # Compute the forward pass
+
+    # (N, D) x (D, H) = (N, H) => N samples, each encoded into a vector of H
+    # "hidden" features
+    # Put simpler, imagine you only have 1 sample, a picture of D pixels.
+    # Then the math would be (1, D) x (D, H) = (1, H)
+    # Your 1 sample has D pixels. The (D, H) matrix is a a collection of H column vectors.
+    # Each column vector is a "template". When multiplied (dot product) by that template,
+    # you're projecting the picture onto that "template", and you get a "similarity" score.
+    # How do you convert an image of D pixels into a single score? Easy,
+    # (1, D) x (D, 1) => [ pixel_1 pixel_2 ... pixel_D ] * [ pixel_1_weight pixel_2_weight ... pixel_D_weight ]
+    # Great, now you have a "similarity" score for the first template.
+    # Because we're converting an image into H scores, however, we need H templates.
+    # In other words, we need a resulting matrix (1, D) x (D, H) = (1, H).
+    # This (1, H) matrix tells us all H templates' scores.
+    # Finally, we're not computing just 1 image's scores. We're computing N images.
+    # Thus, we get an (N, H) matrix.
+
+    # notice X * W1 = (N, D) x (D, H) = (N, H) matrix
+    # and yet we're adding a (H,) vector. With broadcasting, we actually
+    # add this (H,) vector to every single row.
+
+    # ReLU = max(0, W1 * X + b), where max is an element-wise operation
+    hidden_layer = np.maximum(0, np.dot(X, W1) + b1)
+
+    # scores = (N, H) * (H, C) = (N, C)
+    # Each one of the N samples has C "scores", one score for each of the C classes.
+    # For example, each of the N pictures has C scores, a dog score, a cat score, etc.
+    scores = np.dot(hidden_layer, W2) + b2
     
     # If the targets are not given then jump out, we're done
     if y is None:
       return scores
 
     # Compute the loss
+    # The loss will tell us the difference between the real class score and the
+    # computed scores from above. We want to minimize the difference.
     loss = None
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
