@@ -108,7 +108,6 @@ class TwoLayerNet(object):
     # Compute the loss
     # The loss will tell us the difference between the real class score and the
     # computed scores from above. We want to minimize the difference.
-    loss = None
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -116,9 +115,39 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    pass
-    #############################################################################
-    #                              END OF YOUR CODE                             #
+
+    # The following is a vectorized implementation of softmax.
+    # First, np.exp(scores) takes every element in the N x C matrix, and exponentiates it.
+    # Next, np.sum does multiple things.
+    # exps is a 2D matrix. Axis 0 is vertically down. Axis 1 is vertically across.
+    # (See https://docs.scipy.org/doc/numpy-1.10.0/glossary.html#term-along-an-axis for a good explanation of axis).
+    # We want an N x 1 matrix, each row containing the sum of the row's exps. Hence, we set axis=1
+    # to sum each individual row up.
+    # Finally, keepdims=True ensures that the sum of each row remains in its own row. This means
+    # we'll end up with a N x 1 vector, instead of a 1 x N vector. If you're curious,
+    # print np.sum(exps, axis=1) and print np.sum(exps, axis=1, keepdims=True)
+    # to see the difference.
+    exps = np.exp(scores)
+    prob = exps / np.sum(exps, axis=1, keepdims=True)
+
+    # Here, we compute the softmax L_i, the loss for each training sample.
+    # Refer to http://cs231n.github.io/linear-classify/#softmax-classifier for the equation.
+    # f_(y_i) is interpreted as follows:
+    # First, get y_i for each training sample i.
+    # For example, training sample 1 has y_1 = 2. This means training sample 1 is class 2.
+    # That means you need the 2nd element from class scores f.
+    # Because we've already computed the probabilities of each class, we can just choose the
+    # 2nd element from the list of probabilities.
+    # The following code pulls all rows from prob, and from each row, pull the y_i-th element.
+    # See the slicing example from http://cs231n.github.io/python-numpy-tutorial/#numpy-array-indexing.
+    losses = - np.log(prob[range(N), y])
+    data_loss = np.sum(losses) / N
+    regularization_loss_1 = np.sum(np.square(W1)) # also np.sum(W1*W1)
+    regularization_loss_2 = np.sum(np.square(W2)) # also np.sum(W2*W2)
+    loss = data_loss + 0.5 * reg * (regularization_loss_1 + regularization_loss_2)
+    grads = {}
+    return loss, grads
+
     #############################################################################
 
     # Backward pass: compute gradients
