@@ -2,15 +2,15 @@ import numpy as np
 
 class ThreeLayerNet(object):
     """
-    A two-layer fully-connected neural network. The net has an input dimension of
-    N, a hidden layer dimension of H, and performs classification over C classes.
+    A three-layer fully-connected neural network. The net has an input dimension of
+    N, 2 hidden layers, and performs classification over C classes.
     We train the network with a softmax loss function and L2 regularization on the
     weight matrices. The network uses a ReLU nonlinearity after the first fully
     connected layer.
 
     In other words, the network has the following architecture:
 
-    input - fully connected layer - ReLU - fully connected layer - softmax
+    input - fully connected layer - ReLU - fully connected layer - ReLU - fully connected layer - softmax
 
     The outputs of the second fully-connected layer are the scores for each class.
     """
