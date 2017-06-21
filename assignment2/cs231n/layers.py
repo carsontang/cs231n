@@ -69,14 +69,7 @@ def relu_forward(x):
     - out: Output, of the same shape as x
     - cache: x
     """
-    out = None
-    ###########################################################################
-    # TODO: Implement the ReLU forward pass.                                  #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    out = np.maximum(0, x)
     cache = x
     return out, cache
 
@@ -93,13 +86,18 @@ def relu_backward(dout, cache):
     - dx: Gradient with respect to x
     """
     dx, x = None, cache
-    ###########################################################################
-    # TODO: Implement the ReLU backward pass.                                 #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+
+    # Refer to "Boolean array indexing" in
+    # http://cs231n.github.io/python-numpy-tutorial/#numpy-arrays
+    # ReLU(x) = max(0, x)
+    # Thus, the derivative of x when x > 0 is 1.
+    # The derivative of x when x <= 0 is 0.
+    # dL/dx = dL/dout * dout/dx
+    #       = dL/dout * 0 for all x <= 0
+    #       = dL/dout * 1 for all x > 0
+    # Use boolean array indexing to select all elements of x <= 0.
+    dout[x <= 0] = 0
+    dx = dout
     return dx
 
 
