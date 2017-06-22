@@ -163,10 +163,24 @@ class TwoLayerNet(object):
     dscores[range(N), y] -= 1
     dscores /= N
 
-    # TODO: Derive the following
+    # Refer to http://cs231n.stanford.edu/handouts/linear-backprop.pdf
+    # for derivation of backprop
+    # Regarding the derivation of the gradient on the bias,
+    # remember that the biases can be placed inside the weight matrix, W
+    # and that the X vector can include 1's.
+    # See the bias trick section: http://cs231n.github.io/linear-classify/
+
     # W2 and b2
     grads['W2'] = np.dot(hidden_layer.T, dscores)
+
+    # Again, look at http://cs231n.stanford.edu/handouts/derivatives.pdf
+    # for notes on how to derive the backprop for b.
+    # In those notes, the number of samples, N = 1.
+    # So we're deriving dL/db2 for one sample. And this then gets
+    # added to b2, which is broadcasted to all samples stored in the
+    # matrix X.
     grads['b2'] = np.sum(dscores, axis=0)
+
     # next backprop into hidden layer
     dhidden = np.dot(dscores, W2.T)
     # backprop the ReLU non-linearity
