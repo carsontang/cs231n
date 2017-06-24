@@ -98,6 +98,10 @@ class TwoLayerNet(object):
         loss += 0.5 * reg * np.sum(np.square(W2))
 
         # Why do the gradients on W1 and W2 need to be regularized?
+        # Because L = data_loss + regularization_loss
+        # regularization_loss = 0.5 * reg * W^2
+        # dL/dW = d(data_loss)/dW + d(reg_loss)/dW
+        # d(reg_loss)/dw = reg * W
         grads['W1'] += reg * W1
         grads['W2'] += reg * W2
         return loss, grads
