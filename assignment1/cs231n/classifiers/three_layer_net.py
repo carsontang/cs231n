@@ -98,11 +98,13 @@ class ThreeLayerNet(object):
 
         grads = {}
 
-        # dscores = dL/dscores = htrdnlghjevkjvrtfhicrcjkbjiviktnderivative of loss wrt scores
+        # dscores = dL/dscores = derivative of loss wrt scores
         dscores = prob
         dscores[range(N), y] -= 1
         dscores /= N
 
+        # Refer to http://cs231n.stanford.edu/handouts/linear-backprop.pdf
+        # for derivation of backprop
         # scores = np.dot(hidden_layer, W2) + b2
         # dscores/dW2 = d (H * W2) / dW2 = H
         # dL/dw2 = dL/dscores * dscores/dW2 = H * dscores
