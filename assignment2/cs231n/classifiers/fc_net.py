@@ -54,8 +54,6 @@ class TwoLayerNet(object):
         self.params['b1'] = np.zeros(hidden_dim)
         self.params['b2'] = np.zeros(num_classes)
 
-
-
     def loss(self, X, y=None):
         """
         The architecure should be affine - relu - affine - softmax.
@@ -174,8 +172,12 @@ class FullyConnectedNet(object):
             prev_dim = curr_dim
 
         # Initialize weights and biases into final affine layer
-        self.params['W' + str(len(hidden_dims) + 1)] = np.random.normal(scale=weight_scale, size=(prev_dim, num_classes))
-        self.params['b' + str(len(hidden_dims) + 1)] = np.zeros(num_classes)
+        self.params['W' + str(self.num_layers)] = np.random.normal(scale=weight_scale, size=(prev_dim, num_classes))
+        self.params['b' + str(self.num_layers)] = np.zeros(num_classes)
+
+        # For debugging:
+        # for key in self.params.keys():
+        #     print("%s: %s" % (key, self.params[key].shape))
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -221,7 +223,6 @@ class FullyConnectedNet(object):
             for bn_param in self.bn_params:
                 bn_param['mode'] = mode
 
-        scores = None
         ############################################################################
         # TODO: Implement the forward pass for the fully-connected net, computing  #
         # the class scores for X and storing them in the scores variable.          #
@@ -234,10 +235,19 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
+        curr_layer = X
+        caches = {}
+        for layer in range(self.num_layers - 1):
+            layer_index = layer + 1
+            W = self.params['W' + str(layer_index)]
+            b = self.params['b' + str(layer_index)]
+
+            curr_layer, caches[layer_index] = affine_relu_forward(curr_layer, W, b)
+
+        W = self.params['W' + str(self.num_layers)]
+        b = self.params['b' + str(self.num_layers)]
+        scores, affine_cache = affine_forward(curr_layer, W, b)
+        loss, dout = softmax_loss(scores, y)
 
         # If test mode return early
         if mode == 'test':
