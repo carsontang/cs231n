@@ -244,16 +244,17 @@ class FullyConnectedNet(object):
 
             curr_layer, caches[layer_index] = affine_relu_forward(curr_layer, W, b)
 
-        W = self.params['W' + str(self.num_layers)]
-        b = self.params['b' + str(self.num_layers)]
+        W_key = 'W' + str(self.num_layers)
+        b_key = 'b' + str(self.num_layers)
+        W = self.params[W_key]
+        b = self.params[b_key]
         scores, affine_cache = affine_forward(curr_layer, W, b)
-        loss, dout = softmax_loss(scores, y)
+        loss, dscores = softmax_loss(scores, y)
 
         # If test mode return early
         if mode == 'test':
             return scores
 
-        loss, grads = 0.0, {}
         ############################################################################
         # TODO: Implement the backward pass for the fully-connected net. Store the #
         # loss in the loss variable and gradients in the grads dictionary. Compute #
@@ -267,9 +268,25 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
+        grads = {}
+        dcurr_hidden, grads[W_key], grads[b_key] = affine_backward(dscores, affine_cache)
+
+        for layer in reversed(range(self.num_layers - 1)):
+            layer_index = layer + 1
+            W_key = 'W' + str(layer_index)
+            b_key = 'b' + str(layer_index)
+
+            # Compute backward pass for current layer
+            dcurr_hidden, grads[W_key], grads[b_key] = affine_relu_backward(dcurr_hidden, caches[layer_index])
+
+        # reversed vs in-order will result in slightly different results!
+        for layer in reversed(range(self.num_layers)):
+            layer_index = layer + 1
+            W_key = 'W' + str(layer_index)
+            # Compute regularization loss for current layer
+            loss += 0.5 * self.reg * np.sum(np.square(self.params[W_key]))
+
+            # Regularize gradient
+            grads[W_key] += self.reg * self.params[W_key]
 
         return loss, grads
