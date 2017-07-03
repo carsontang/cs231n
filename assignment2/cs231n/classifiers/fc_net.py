@@ -279,6 +279,10 @@ class FullyConnectedNet(object):
             # Compute backward pass for current layer
             dcurr_hidden, grads[W_key], grads[b_key] = affine_relu_backward(dcurr_hidden, caches[layer_index])
 
+        # Due to the fact that fractional numbers aren't always represented with
+        # 100% accuracy in the machine, the order in which floating point numbers
+        # are added may result in slightly different numbers.
+        # Stick with "reversed" to match the TwoLayerNet implemented above.
         # reversed vs in-order will result in slightly different results!
         for layer in reversed(range(self.num_layers)):
             layer_index = layer + 1
