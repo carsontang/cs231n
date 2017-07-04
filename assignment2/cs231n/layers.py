@@ -163,10 +163,23 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # variance, storing your result in the running_mean and running_var   #
         # variables.                                                          #
         #######################################################################
-        pass
-        #######################################################################
-        #                           END OF YOUR CODE                          #
-        #######################################################################
+        # Take the mean and variance along axis 0
+        # because you're trying to normalize each datapoint's individual features.
+        mean_across_feature = np.mean(x, axis=0)
+        std_across_feature = np.std(x, axis=0)
+
+        normalized = (x - mean_across_feature) / std_across_feature
+
+        # Scale and translate with learnable parameters
+        # to potentially undo the normalization.
+        # This allows the layer to not lose its representational power.
+        out = gamma * normalized + beta
+
+        # TODO: store intermediates in cache
+
+        running_mean = momentum * running_mean + (1 - momentum) * mean_across_feature
+        running_var = momentum * running_var + (1 - momentum) * np.var(x, axis=0)
+
     elif mode == 'test':
         #######################################################################
         # TODO: Implement the test-time forward pass for batch normalization. #
