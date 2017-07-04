@@ -147,6 +147,15 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
     out, cache = None, None
+
+    def batch_norm_helper(X, mean, std, gamma, beta):
+        # 1) Normalize
+        # 2) Scale and translate with learnable parameters
+        # to potentially undo the normalization.
+        # This allows the layer to not lose its representational power.
+        normalized = (X - mean)/std
+        return gamma * normalized + beta
+
     if mode == 'train':
         #######################################################################
         # TODO: Implement the training-time forward pass for batch norm.      #
@@ -168,14 +177,12 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         mean_across_feature = np.mean(x, axis=0)
         std_across_feature = np.std(x, axis=0)
 
-        normalized = (x - mean_across_feature) / std_across_feature
+        out = batch_norm_helper(x, mean_across_feature, std_across_feature, gamma, beta)
 
-        # Scale and translate with learnable parameters
-        # to potentially undo the normalization.
-        # This allows the layer to not lose its representational power.
-        out = gamma * normalized + beta
-
-        # TODO: store intermediates in cache
+        # TODO: store intermediates in cache. Use Stanford's for now.
+        centered_x = x - mean_across_feature
+        normalized = centered_x / std_across_feature
+        cache = (mode, x, gamma, centered_x, std_across_feature, normalized, out)
 
         running_mean = momentum * running_mean + (1 - momentum) * mean_across_feature
         running_var = momentum * running_var + (1 - momentum) * np.var(x, axis=0)
@@ -187,10 +194,10 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # then scale and shift the normalized data using gamma and beta.      #
         # Store the result in the out variable.                               #
         #######################################################################
-        pass
-        #######################################################################
-        #                          END OF YOUR CODE                           #
-        #######################################################################
+        std = np.sqrt(running_var + eps)
+        xn = (x - running_mean) / std
+        out = batch_norm_helper(x, running_mean, std, gamma, beta)
+        cache = (mode, x, xn, gamma, beta, std)
     else:
         raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
 
@@ -218,15 +225,30 @@ def batchnorm_backward(dout, cache):
     - dgamma: Gradient with respect to scale parameter gamma, of shape (D,)
     - dbeta: Gradient with respect to shift parameter beta, of shape (D,)
     """
-    dx, dgamma, dbeta = None, None, None
-    ###########################################################################
-    # TODO: Implement the backward pass for batch normalization. Store the    #
-    # results in the dx, dgamma, and dbeta variables.                         #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+
+    # TODO (ctang): Implement this. Below is not your solution,
+    mode = cache[0]
+    if mode == 'train':
+        mode, x, gamma, xc, std, xn, out = cache
+
+        N = x.shape[0]
+        dbeta = dout.sum(axis=0)
+        dgamma = np.sum(xn * dout, axis=0)
+        dxn = gamma * dout
+        dxc = dxn / std
+        dstd = -np.sum((dxn * xc) / (std * std), axis=0)
+        dvar = 0.5 * dstd / std
+        dxc += (2.0 / N) * xc * dvar
+        dmu = np.sum(dxc, axis=0)
+        dx = dxc - dmu / N
+    elif mode == 'test':
+        mode, x, xn, gamma, beta, std = cache
+        dbeta = dout.sum(axis=0)
+        dgamma = np.sum(xn * dout, axis=0)
+        dxn = gamma * dout
+        dx = dxn / std
+    else:
+        raise ValueError(mode)
 
     return dx, dgamma, dbeta
 
