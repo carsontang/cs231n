@@ -26,7 +26,6 @@ def affine_forward(x, w, b):
 
     # reshape each input into a vector of dimension D = d_1 * ... * d_k
     reshaped_x = x.reshape(x.shape[0], np.prod(x.shape[1:]))
-
     out = np.dot(reshaped_x, w) + b
     cache = (x, w, b)
     return out, cache
@@ -146,9 +145,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
     running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
-    out, cache = None, None
-
-    def batch_norm_helper(X, mean, std, gamma, beta):
+    def batchnorm_helper(X, mean, std, gamma, beta):
         # 1) Normalize
         # 2) Scale and translate with learnable parameters
         # to potentially undo the normalization.
@@ -177,7 +174,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         mean_across_feature = np.mean(x, axis=0)
         std_across_feature = np.std(x, axis=0)
 
-        out = batch_norm_helper(x, mean_across_feature, std_across_feature, gamma, beta)
+        out = batchnorm_helper(x, mean_across_feature, std_across_feature, gamma, beta)
 
         # TODO: store intermediates in cache. Use Stanford's for now.
         centered_x = x - mean_across_feature
@@ -186,7 +183,6 @@ def batchnorm_forward(x, gamma, beta, bn_param):
 
         running_mean = momentum * running_mean + (1 - momentum) * mean_across_feature
         running_var = momentum * running_var + (1 - momentum) * np.var(x, axis=0)
-
     elif mode == 'test':
         #######################################################################
         # TODO: Implement the test-time forward pass for batch normalization. #
@@ -196,7 +192,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         std = np.sqrt(running_var + eps)
         xn = (x - running_mean) / std
-        out = batch_norm_helper(x, running_mean, std, gamma, beta)
+        out = batchnorm_helper(x, running_mean, std, gamma, beta)
         cache = (mode, x, xn, gamma, beta, std)
     else:
         raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
