@@ -169,6 +169,12 @@ class FullyConnectedNet(object):
         for index, curr_dim in enumerate(hidden_dims):
             self.params['W' + str(index + 1)] = np.random.normal(scale=weight_scale, size=(prev_dim, curr_dim))
             self.params['b' + str(index + 1)] = np.zeros(curr_dim)
+
+            # 1 gamma & beta per feature.
+            # See https://arxiv.org/pdf/1502.03167.pdf, page 3, for clarification
+            if self.use_batchnorm:
+                self.params['gamma' + str(index + 1)] = np.ones(curr_dim)
+                self.params['beta' + str(index + 1)] = np.zeros(curr_dim)
             prev_dim = curr_dim
 
         # Initialize weights and biases into final affine layer
@@ -242,7 +248,16 @@ class FullyConnectedNet(object):
             W = self.params['W' + str(layer_index)]
             b = self.params['b' + str(layer_index)]
 
-            curr_layer, caches[layer_index] = affine_relu_forward(curr_layer, W, b)
+            curr_layer, fc_cache = affine_forward(curr_layer, W, b)
+            bn_cache = None
+            if self.use_batchnorm:
+                gamma = self.params['gamma' + str(layer_index)]
+                beta = self.params['beta' + str(layer_index)]
+                curr_layer, bn_cache = batchnorm_forward(curr_layer, gamma, beta, self.bn_params[layer_index-1])
+            curr_layer, relu_cache = relu_forward(curr_layer)
+            caches[layer_index] = (fc_cache, bn_cache, relu_cache)
+
+            # curr_layer, caches[layer_index] = affine_relu_forward(curr_layer, W, b)
 
         W_key = 'W' + str(self.num_layers)
         b_key = 'b' + str(self.num_layers)
@@ -275,9 +290,17 @@ class FullyConnectedNet(object):
             layer_index = layer + 1
             W_key = 'W' + str(layer_index)
             b_key = 'b' + str(layer_index)
+            gamma_key = 'gamma' + str(layer_index)
+            beta_key = 'beta' + str(layer_index)
 
             # Compute backward pass for current layer
-            dcurr_hidden, grads[W_key], grads[b_key] = affine_relu_backward(dcurr_hidden, caches[layer_index])
+            fc_cache, bn_cache, relu_cache = caches[layer_index]
+            dcurr_hidden = relu_backward(dcurr_hidden, relu_cache)
+            if self.use_batchnorm:
+                dcurr_hidden, grads[gamma_key], grads[beta_key] = batchnorm_backward(dcurr_hidden, bn_cache)
+            dcurr_hidden, grads[W_key], grads[b_key] = affine_backward(dcurr_hidden, fc_cache)
+
+            # dcurr_hidden, grads[W_key], grads[b_key] = affine_relu_backward(dcurr_hidden, caches[layer_index])
 
         # Due to the fact that fractional numbers aren't always represented with
         # 100% accuracy in the machine, the order in which floating point numbers
@@ -289,6 +312,8 @@ class FullyConnectedNet(object):
             W_key = 'W' + str(layer_index)
             # Compute regularization loss for current layer
             loss += 0.5 * self.reg * np.sum(np.square(self.params[W_key]))
+
+            # No need to regularize scale and shift params for batchnorm
 
             # Regularize gradient
             grads[W_key] += self.reg * self.params[W_key]
