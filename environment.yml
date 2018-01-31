@@ -23,6 +23,7 @@ dependencies:
     - pyqt=4.11.4
     - pytorch
     - torchvision
+    - future
     - pip:
         - moviepy
         - tensorflow
