@@ -377,18 +377,61 @@ def conv_forward_naive(x, w, b, conv_param):
       W' = 1 + (W + 2 * pad - WW) / stride
     - cache: (x, w, b, conv_param)
     """
-    out = None
-    ###########################################################################
-    # TODO: Implement the convolutional forward pass.                         #
-    # Hint: you can use the function np.pad for padding.                      #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+
+    stride = conv_param['stride']
+    pad = conv_param['pad']
+
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+    H_new = int(1 + (H + 2 * pad - HH) / stride)
+    W_new = int(1 + (W + 2 * pad - WW) / stride)
+
+    out = np.empty((N, F, H_new, W_new))
+
+    # Every input point will be convolved with every filter from our filter bank
+    for i, input in enumerate(x):
+        for j, filter in enumerate(w):
+            bias = b[j] # select the bias corresponding to this filter
+            out[i,j] = convolve(input, filter, stride, pad, bias)
+
     cache = (x, w, b, conv_param)
     return out, cache
 
+def convolve(input, filter, stride, pad, bias):
+    # Common mistake: don't forget to add the bias in!
+
+    C, H, W = input.shape
+    _, HH, WW = filter.shape
+
+    # The shape of the output of image convolved with filter is (H_new, W_new)
+    H_new = int((H + 2*pad - HH)/stride + 1)
+    W_new = int((W + 2*pad - WW)/stride + 1)
+
+    out = np.empty((H_new, W_new))
+
+    padded_input = np.pad(
+        array=input,
+        pad_width=[(0,0), (pad,pad), (pad,pad)],
+        mode='constant',
+        constant_values=[(0,0), (0,0), (0,0)])
+
+    # len(H_new) = number of starting points to place filter along H
+    for i in range(H_new):
+        for j in range(W_new):
+            H_start, W_start = i * stride, j * stride
+            H_end, W_end = H_start + HH, W_start + WW
+
+            # Compute across all channels!
+            out[i, j] \
+                = np.sum(padded_input[:, H_start:H_end, W_start:W_end] * filter) + bias
+
+            # OR, alternatively, more naive implementation
+            # channel_sum = 0
+            # for c in range(C):
+            #     channel_sum += np.sum(padded_input[c, H_start:H_end, W_start:W_end] * filter[c])
+            # out[i, j] = channel_sum + bias
+
+    return out
 
 def conv_backward_naive(dout, cache):
     """
