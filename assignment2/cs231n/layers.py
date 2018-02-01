@@ -422,6 +422,8 @@ def convolve(input, filter, stride, pad, bias):
             H_end, W_end = H_start + HH, W_start + WW
 
             # Compute across all channels!
+            # Take out a patch from input corresponding to
+            # indices [H_start, H_end), [W_start, W_end)
             out[i, j] \
                 = np.sum(padded_input[:, H_start:H_end, W_start:W_end] * filter) + bias
 
